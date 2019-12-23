@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTrajec", "DataTrajec\DataTrajec.csproj", "{61301B1E-47F1-4DDC-A531-5BBD2BB86B86}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{61301B1E-47F1-4DDC-A531-5BBD2BB86B86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61301B1E-47F1-4DDC-A531-5BBD2BB86B86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61301B1E-47F1-4DDC-A531-5BBD2BB86B86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61301B1E-47F1-4DDC-A531-5BBD2BB86B86}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {43B111BD-4822-473D-A547-C30D28A3B661}
+	EndGlobalSection
+EndGlobal
