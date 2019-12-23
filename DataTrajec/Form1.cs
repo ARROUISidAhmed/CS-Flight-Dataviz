@@ -165,10 +165,6 @@ namespace DataTrajec
                     float deltaTheta = Map(0, myView.Width, 0, MathHelper.TwoPi, e.X - previousPos.X);
                     float deltaPhi = Map(0, myView.Height, 0, MathHelper.TwoPi, e.Y - previousPos.Y);
 
-                    /*eye.X = (float)(length * Math.Sin(phi) * Math.Cos(theta));
-                    eye.Z = (float)(length * Math.Sin(phi) * Math.Sin(theta));
-                    eye.Y = (float)(length * Math.Cos(phi) );
-                    */
                     Quaternion rotation = new Quaternion(0, deltaTheta, deltaPhi);
                     eye = Vector3.Transform(eye,rotation);
                     up = Vector3.Transform(up, rotation);
@@ -180,11 +176,8 @@ namespace DataTrajec
                     break;
 
                 case State.RightDrag:
-                    length = Map(0, myView.Width, 0f, 5f, e.X);
-                    eye.Normalize();
-                    eye *= length;
+                    state = State.RightDrag;
 
-                    myView.Invalidate();
                     break;
                 case State.WheelDrag:
                     state = State.WheelDrag;
