@@ -49,6 +49,7 @@
             this.alphaTrack.Name = "alphaTrack";
             this.alphaTrack.Size = new System.Drawing.Size(234, 56);
             this.alphaTrack.TabIndex = 0;
+            this.alphaTrack.Value = 50;
             this.alphaTrack.ValueChanged += new System.EventHandler(this.AlphaTrack_ValueChanged);
             // 
             // alphaGroup
@@ -101,6 +102,7 @@
             this.maxTrack.Size = new System.Drawing.Size(180, 56);
             this.maxTrack.TabIndex = 1;
             this.maxTrack.Value = 100;
+            this.maxTrack.ValueChanged += new System.EventHandler(this.MaxTrack_ValueChanged);
             // 
             // minTrack
             // 
@@ -111,6 +113,7 @@
             this.minTrack.Size = new System.Drawing.Size(180, 56);
             this.minTrack.TabIndex = 0;
             this.minTrack.Value = -100;
+            this.minTrack.ValueChanged += new System.EventHandler(this.MinTrack_ValueChanged);
             // 
             // Trajectories
             // 

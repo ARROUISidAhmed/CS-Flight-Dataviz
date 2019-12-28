@@ -47,11 +47,16 @@ namespace DataTrajec
 
         private Record minRecord, maxRecord;
         private PointF minPoint, maxPoint;
+
         private Vector3 eye, target, up;
         private Vector2 previousPos;
+
         private Quaternion quaternion;
-        private int alphaValue;
         private float blend;
+
+        private int alphaValue;
+        private float startAltitude, endAltitude;
+
         public Trajectories()
         {
             InitializeComponent();
@@ -440,18 +445,33 @@ namespace DataTrajec
         {
             foreach (var traj in dicRec)
             {
-                GL.Begin((PrimitiveType.LineStrip));
+
+                //Decide if we paint this trajectory
+                bool isPaintable = true;
 
                 foreach (var rec in traj.Value)
                 {
-                    GL.Color4(GetAltidueColor(rec.z, Color.Green, Color.Blue, alphaValue));
-                    GL.Vertex3(new Vector3(
-                        rec.x,
-                        rec.y,
-                        rec.z
-                        ));
+                    isPaintable &= (rec.z >= startAltitude && rec.z <= endAltitude);
                 }
-                GL.End();
+
+                if (isPaintable)
+                {
+
+                    GL.Begin((PrimitiveType.LineStrip));
+                    foreach (var rec in traj.Value)
+                    {
+
+                        GL.Color4(GetAltidueColor(rec.z, Color.Green, Color.Blue, alphaValue));
+                        GL.Vertex3(new Vector3(
+                            rec.x,
+                            rec.y,
+                            rec.z
+                            ));
+
+                    }
+                    GL.End();
+                }
+
 
             }
         }
@@ -479,6 +499,18 @@ namespace DataTrajec
 
         }
 
+        private void MaxTrack_ValueChanged(object sender, EventArgs e)
+        {
+            endAltitude = maxTrack.Value / (float)100;
+            myView.Invalidate();
+        }
+
+        private void MinTrack_ValueChanged(object sender, EventArgs e)
+        {
+            startAltitude = minTrack.Value / (float)100;
+            myView.Invalidate();
+        }
+
         private void Trajectories_Load(object sender, EventArgs e)
         {
             ReadMapFile("fr-administrative-area.csv");
@@ -497,6 +529,8 @@ namespace DataTrajec
             previousPos = Vector2.Zero;
             quaternion = Quaternion.Identity;
             alphaValue = 50;
+            startAltitude = -1f;
+            endAltitude = 1f;
 
         }
 
