@@ -133,6 +133,8 @@ namespace DataTrajec
                     if (point.Y > maxPoint.Y)
                         maxPoint.Y = point.Y;
                 }
+
+
             }
 
         }
@@ -156,14 +158,14 @@ namespace DataTrajec
             PointF p = new PointF();
             foreach (var region in regions)
             {
-                for (int i = 0; i < region.Value.Count(); i++)
+                for (int i = 0; i < region.Value.Count; i++)
                 {
-
                     p = region.Value[i];
                     p.X = Map(minPoint.X, maxPoint.X, -1, 1, p.X);
                     p.Y = Map(minPoint.Y, maxPoint.Y, -1, 1, p.Y);
-                    region.Value[i] = p;;
+                    region.Value[i] = p;
                 }
+
             }
         }
         private void MyView_Paint(object sender, PaintEventArgs e)
@@ -456,21 +458,25 @@ namespace DataTrajec
 
         private void DrawFranceMap()
         {
-            foreach (var region in regions)
+            /* A refaire
+            var region = new List<PointF>();
+            regions.TryGetValue(1, out region);
+            GL.Begin(PrimitiveType.Line);
+            foreach (var point in region)
             {
-                GL.Begin((PrimitiveType.LineStrip));
 
-                foreach (var point in region.Value)
-                {
-                    GL.Color4(Color.Yellow);
-                    GL.Vertex3(new Vector3(
-                        point.X,
-                        point.Y,
-                        0f
-                        ));
-                }
-                GL.End();
+                GL.Color4(Color.Yellow);
+                GL.Vertex3(new Vector3(
+                point.X,
+                point.Y,
+                -1f
+                ));
+
             }
+
+            GL.End();
+            */
+
         }
 
         private void Trajectories_Load(object sender, EventArgs e)
@@ -528,31 +534,34 @@ namespace DataTrajec
 
             string[] lines = File.ReadAllLines(jsonFile);
             char[] splitChar = new char[] { ';' };
+            int id = 1;
             regions = new Dictionary<int, List<PointF>>();
             foreach (string line in lines)
             {
                 if (line[0] != '#')
                 {
                     var items = line.Split(splitChar);
-                    int id = Int32.Parse(items[2]);
+
+
 
                     string geoShape = items[1];
                     geoShape = geoShape.TrimStart('"').TrimEnd('"');
                     geoShape = geoShape.Replace("\"\"", "\"");
 
-                    JObject shape = JObject.Parse(geoShape);
+                    JObject shapeJson = JObject.Parse(geoShape);
                     if (!regions.ContainsKey(id))
                         regions.Add(id, new List<PointF>());
 
-                    foreach (var points in shape["coordinates"])
+                    foreach (var polygon in shapeJson["coordinates"])
                     {
-                        foreach (var point in points)
+                        foreach (var point in polygon)
                         {
                             regions[id].Add(new PointF(Single.Parse(point[0].ToString(), CultureInfo.InvariantCulture),
                                 Single.Parse(point[1].ToString(), CultureInfo.InvariantCulture)));
 
                         }
                     }
+                    id++;
                 }
             }
 
