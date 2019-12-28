@@ -32,7 +32,8 @@ namespace DataTrajec
         private enum State
         {
             Init,
-            LeftDrag,
+            RotateX,
+            RotateY,
             RightDrag,
             MiddleDrag
 
@@ -76,7 +77,7 @@ namespace DataTrajec
 
             state = State.Init;
             myView = new OpenTK.GLControl();
-            myView.Size = new Size(1024, 920);
+            myView.Size = new Size(Width, Height);
             myView.Paint += MyView_Paint;
             myView.MouseMove += new MouseEventHandler(this.MouseMove);
             myView.MouseDown += new MouseEventHandler(this.MouseDown);
@@ -262,27 +263,7 @@ namespace DataTrajec
 
             switch (state)
             {
-                case State.LeftDrag:
-                    state = State.LeftDrag;
-
-                    float deltaTheta = Map(0, myView.Width, 0, MathHelper.TwoPi, previousPos.X - e.X);
-                    float deltaPhi = Map(0, myView.Height, 0, MathHelper.Pi, previousPos.Y - e.Y);
-
-
-
-                    Quaternion rotationX = Quaternion.FromAxisAngle(up, deltaTheta);
-                    Quaternion rotationY = Quaternion.FromAxisAngle(Vector3.Cross(up, eye - target), deltaPhi);
-
-
-                    eye = Vector3.Transform(eye, rotationX * rotationY);
-                    up = Vector3.Transform(up, rotationY);
-
-                    previousPos.X = e.X;
-                    previousPos.Y = e.Y;
-
-                    myView.Invalidate();
-                    break;
-
+              
                 case State.RightDrag:
                     state = State.RightDrag;
 
@@ -315,9 +296,6 @@ namespace DataTrajec
         {
             switch (e.Button)
             {
-                case MouseButtons.Left:
-                    HandleLeftDown(e);
-                    break;
                 case MouseButtons.Right:
                     HandleRightDown(e);
                     break;
@@ -330,20 +308,7 @@ namespace DataTrajec
 
         }
 
-        private void HandleLeftDown(MouseEventArgs e)
-        {
-            switch (state)
-            {
-                case State.Init:
-                    state = State.LeftDrag;
-                    previousPos.X = e.X;
-                    previousPos.Y = e.Y;
-                    break;
-
-                default:
-                    break;
-            }
-        }
+       
         private void HandleRightDown(MouseEventArgs e)
         {
             switch (state)
@@ -377,9 +342,7 @@ namespace DataTrajec
         {
             switch (e.Button)
             {
-                case MouseButtons.Left:
-                    HandleLeftUp();
-                    break;
+               
                 case MouseButtons.Right:
                     HandleRightUp();
                     break;
@@ -391,17 +354,7 @@ namespace DataTrajec
             }
         }
 
-        private void HandleLeftUp()
-        {
-            switch (state)
-            {
-                case State.LeftDrag:
-                    state = State.Init;
-                    break;
-                default:
-                    break;
-            }
-        }
+      
         private void HandleRightUp()
         {
             switch (state)
@@ -503,6 +456,157 @@ namespace DataTrajec
         {
             endAltitude = maxTrack.Value / (float)100;
             myView.Invalidate();
+        }
+
+        private void Trajectories_Resize(object sender, EventArgs e)
+        {
+            if (myView!=null)
+            {
+                myView.Width = Width;
+                myView.Height = Height;
+                myView.Invalidate();
+
+            }
+
+            rotateY.Location = new Point(0, Height / 2);
+            rotateY.Invalidate();
+            rotateX.Location = new Point(Width/2, Height-(Height / 10));
+            rotateX.Invalidate();
+
+
+        }
+
+       
+
+   
+
+
+        private void button2_MouseDown(object sender, MouseEventArgs e)
+        {
+             if (e.Button == MouseButtons.Left)
+            {
+                switch (state)
+                {
+                    case State.Init:
+                        state = State.RotateY;
+                        previousPos.Y = e.Y;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            
+        }
+
+        private void button2_MouseMove(object sender, MouseEventArgs e)
+        {
+
+
+            switch (state)
+            {
+                case State.RotateY:
+                    state = State.RotateY;
+                    float deltaPhi = Map(0, myView.Height, 0, MathHelper.Pi, previousPos.Y - e.Y);
+                    Quaternion rotationY = Quaternion.FromAxisAngle(Vector3.Cross(up, eye - target), deltaPhi);
+                    eye = Vector3.Transform(eye, rotationY);
+                    up = Vector3.Transform(up, rotationY);
+                    previousPos.Y = e.Y;
+
+                    myView.Invalidate();
+                    break;
+                case State.MiddleDrag:
+                    state = State.MiddleDrag;
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        private void button2_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                switch (state)
+                {
+                    case State.RotateY:
+                        state = State.Init;
+
+                        break;
+                    default:
+                        break;
+
+                }
+            }
+           
+        }
+
+        private void rotateX_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                switch (state)
+                {
+                    case State.Init:
+                        state = State.RotateX;
+                        previousPos.X = e.X;
+                        break;
+                    default:
+                        break;
+
+                }
+            }
+            
+        }
+
+        private void rotateX_MouseMove(object sender, MouseEventArgs e)
+        {
+            switch (state)
+            {
+               
+                case State.RotateX:
+                    state = State.RotateX;
+
+                    float deltaTheta = Map(0, myView.Width, 0, MathHelper.TwoPi, previousPos.X - e.X);
+
+                    Quaternion rotationX = Quaternion.FromAxisAngle(up, deltaTheta);
+
+                    eye = Vector3.Transform(eye, rotationX);
+
+                    previousPos.X = e.X;
+                    myView.Invalidate();
+                    break;     
+                case State.MiddleDrag:
+                    state = State.MiddleDrag;
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        private void rotateX_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                switch (state)
+                {
+                    case State.RotateX:
+                        state = State.Init;
+                        break;
+                    default:
+                        break;
+
+                }
+            }
+            
+        }
+
+      
+        private void resetButton_Click(object sender, EventArgs e)
+        {
+            //add animation to the first position
         }
 
         private void MinTrack_ValueChanged(object sender, EventArgs e)
