@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using Newtonsoft.Json;
+using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Web;
-using Json.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+
 
 namespace DataTrajec
 {
@@ -35,28 +33,34 @@ namespace DataTrajec
             RotateX,
             RotateY,
             RightDrag,
-            MiddleDrag
+            MiddleDrag,
+            Animating
 
         }
         private State state;
         private Dictionary<int, List<Record>> dicRec;
-        private Dictionary<int, List<PointF>> regions;
+        private List<BAMCIS.GeoJSON.Polygon> regions;
         /// <summary>
         /// My OpenGL entry point
         /// </summary>
         private OpenTK.GLControl myView;
 
         private Record minRecord, maxRecord;
-        private PointF minPoint, maxPoint;
 
         private Vector3 eye, target, up;
         private Vector2 previousPos;
 
-        private Quaternion quaternion;
+        private float animation;
         private float blend;
 
         private int alphaValue;
         private float startAltitude, endAltitude;
+
+        private Color minColor;
+        private Color maxColor;
+
+        private Color defaultminColor = Color.Green;
+        private Color defaultmaxColor = Color.Blue;
 
         public Trajectories()
         {
@@ -91,19 +95,19 @@ namespace DataTrajec
         {
 
             minRecord = new Record();
-            maxRecord = new Record();
-            minPoint = new PointF();
-            maxPoint = new PointF();
+            maxRecord = new Record();/*
+            minPoint = new Vector2d();
+            maxPoint = new Vector2d();*/
             minRecord.x = float.MaxValue;
             minRecord.y = float.MaxValue;
             minRecord.z = float.MaxValue;
             maxRecord.x = float.MinValue;
             maxRecord.y = float.MinValue;
-            maxRecord.z = float.MinValue;
+            maxRecord.z = float.MinValue;/*
             minPoint.X = float.MaxValue;
             minPoint.Y = float.MaxValue;
             maxPoint.X = float.MinValue;
-            maxPoint.Y = float.MinValue;
+            maxPoint.Y = float.MinValue;*/
 
             foreach (var recs in dicRec)
             {
@@ -124,24 +128,30 @@ namespace DataTrajec
                         maxRecord.z = rec.z;
                 }
             }
-
-            foreach (var region in regions)
+            /*
+            foreach (var polygon in regions)
             {
-                foreach (var point in region.Value)
+
+                foreach (var rings in polygon.Coordinates.ToList())
                 {
-                    if (point.X < minPoint.X)
-                        minPoint.X = point.X;
-                    if (point.Y < minPoint.Y)
-                        minPoint.Y = point.Y;
+                    foreach (var point in rings.Coordinates.ToList())
+                    {
 
-                    if (point.X > maxPoint.X)
-                        maxPoint.X = point.X;
-                    if (point.Y > maxPoint.Y)
-                        maxPoint.Y = point.Y;
+                        if (point.Longitude < minPoint.X)
+                            minPoint.X = point.Longitude;
+                        if (point.Latitude < minPoint.Y)
+                            minPoint.Y = point.Latitude;
+
+                        if (point.Longitude > maxPoint.X)
+                            maxPoint.X = point.Longitude;
+                        if (point.Latitude > maxPoint.Y)
+                            maxPoint.Y = point.Latitude;
+                    }
                 }
+            }*/
 
 
-            }
+
 
         }
 
@@ -161,19 +171,9 @@ namespace DataTrajec
                 }
             }
 
-            PointF p = new PointF();
-            foreach (var region in regions)
-            {
-                for (int i = 0; i < region.Value.Count; i++)
-                {
-                    p = region.Value[i];
-                    p.X = Map(minPoint.X, maxPoint.X, -1, 1, p.X);
-                    p.Y = Map(minPoint.Y, maxPoint.Y, -1, 1, p.Y);
-                    region.Value[i] = p;
-                }
 
-            }
         }
+
         private void MyView_Paint(object sender, PaintEventArgs e)
         {
             GL.Viewport(0, 0, myView.ClientSize.Width, myView.ClientSize.Height);
@@ -210,6 +210,7 @@ namespace DataTrajec
 
         private new void MouseWheel(object sender, MouseEventArgs e)
         {
+
             blend = MathHelper.Clamp((0.001f * e.Delta), -1f, 1f);
 
 
@@ -219,51 +220,13 @@ namespace DataTrajec
             myView.Invalidate();
         }
 
-        /*
-        // functions:
-        public static Vector4 convertScreenToWorldCoords(int x, int y)
-        {
-            int[] viewport = new int[4];
-            Matrix4 modelViewMatrix, projectionMatrix;
-            GL.GetFloat(GetPName.ModelviewMatrix, out modelViewMatrix);
-            GL.GetFloat(GetPName.ProjectionMatrix, out projectionMatrix);
-            GL.GetInteger(GetPName.Viewport, viewport);
-            Vector2 mouse;
-            mouse.X = x;
-            mouse.Y = y;
-            Vector4 vector = UnProject(ref projectionMatrix, modelViewMatrix, new Size(viewport[2], viewport[3]), mouse);
-            return vector;
-        }
-        public static Vector4 UnProject(ref Matrix4 projection, Matrix4 view, Size viewport, Vector2 mouse)
-        {
-            Vector4 vec;
 
-            vec.X = 2.0f * mouse.X / (float)viewport.Width - 1;
-            vec.Y = 2.0f * mouse.Y / (float)viewport.Height - 1;
-            vec.Z = 0;
-            vec.W = 1.0f;
-
-            Matrix4 viewInv = Matrix4.Invert(view);
-            Matrix4 projInv = Matrix4.Invert(projection);
-
-            Vector4.Transform(ref vec, ref projInv, out vec);
-            Vector4.Transform(ref vec, ref viewInv, out vec);
-
-            if (vec.W > float.Epsilon || vec.W < float.Epsilon)
-            {
-                vec.X /= vec.W;
-                vec.Y /= vec.W;
-                vec.Z /= vec.W;
-            }
-
-            return vec;
-        }*/
         private new void MouseMove(object sender, MouseEventArgs e)
         {
 
             switch (state)
             {
-              
+
                 case State.RightDrag:
                     state = State.RightDrag;
 
@@ -308,7 +271,7 @@ namespace DataTrajec
 
         }
 
-       
+
         private void HandleRightDown(MouseEventArgs e)
         {
             switch (state)
@@ -342,7 +305,7 @@ namespace DataTrajec
         {
             switch (e.Button)
             {
-               
+
                 case MouseButtons.Right:
                     HandleRightUp();
                     break;
@@ -354,7 +317,7 @@ namespace DataTrajec
             }
         }
 
-      
+
         private void HandleRightUp()
         {
             switch (state)
@@ -414,7 +377,7 @@ namespace DataTrajec
                     foreach (var rec in traj.Value)
                     {
 
-                        GL.Color4(GetAltidueColor(rec.z, Color.Green, Color.Blue, alphaValue));
+                        GL.Color4(GetAltidueColor(rec.z, minColor, maxColor, alphaValue));
                         GL.Vertex3(new Vector3(
                             rec.x,
                             rec.y,
@@ -431,59 +394,61 @@ namespace DataTrajec
 
         private void DrawFranceMap()
         {
-            /* A refaire
-            var region = new List<PointF>();
-            regions.TryGetValue(1, out region);
-            GL.Begin(PrimitiveType.Line);
-            foreach (var point in region)
+            foreach (var polygon in regions)
             {
 
-                GL.Color4(Color.Yellow);
-                GL.Vertex3(new Vector3(
-                point.X,
-                point.Y,
-                -1f
-                ));
+                foreach (var rings in polygon.Coordinates.ToList())
+                {
+                    GL.Begin(PrimitiveType.LineStrip);
+                    foreach (var point in rings.Coordinates.ToList())
+                    {
 
+                        GL.Color4(Color.Yellow);
+                        GL.Vertex3(new Vector3(
+                        Map(minRecord.x, maxRecord.x, -1, 1, (float)point.Longitude),
+                        Map(minRecord.y, maxRecord.y, -1, 1, (float)point.Latitude),
+                        -1f));
+
+                    }
+                    GL.End();
+                }
             }
-
-            GL.End();
-            */
 
         }
 
         private void MaxTrack_ValueChanged(object sender, EventArgs e)
         {
-            endAltitude = maxTrack.Value /  (float)100;
+            endAltitude = maxTrack.Value / (float)100;
             myView.Invalidate();
         }
 
         private void Trajectories_Resize(object sender, EventArgs e)
         {
-            if (myView!=null)
+            if (myView != null)
             {
                 myView.Width = Width;
                 myView.Height = Height;
                 myView.Invalidate();
 
             }
-
+            flowLayoutPanel1.Height = Height;
+            flowLayoutPanel1.Invalidate();
             rotateY.Location = new Point(0, Height / 2);
             rotateY.Invalidate();
-            rotateX.Location = new Point(Width/2, Height-(Height / 10));
+            rotateX.Location = new Point((Width / 2), Height - (Height / 10));
             rotateX.Invalidate();
 
 
         }
 
-       
 
-   
+
+
 
 
         private void button2_MouseDown(object sender, MouseEventArgs e)
         {
-             if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left)
             {
                 switch (state)
                 {
@@ -496,7 +461,7 @@ namespace DataTrajec
                         break;
                 }
             }
-            
+
         }
 
         private void button2_MouseMove(object sender, MouseEventArgs e)
@@ -539,7 +504,7 @@ namespace DataTrajec
 
                 }
             }
-           
+
         }
 
         private void rotateX_MouseDown(object sender, MouseEventArgs e)
@@ -557,15 +522,16 @@ namespace DataTrajec
 
                 }
             }
-            
+
         }
 
         private void rotateX_MouseMove(object sender, MouseEventArgs e)
         {
             switch (state)
             {
-               
+
                 case State.RotateX:
+
                     state = State.RotateX;
 
                     float deltaTheta = Map(0, myView.Width, 0, MathHelper.TwoPi, previousPos.X - e.X);
@@ -576,7 +542,7 @@ namespace DataTrajec
 
                     previousPos.X = e.X;
                     myView.Invalidate();
-                    break;     
+                    break;
                 case State.MiddleDrag:
                     state = State.MiddleDrag;
                     break;
@@ -600,13 +566,97 @@ namespace DataTrajec
 
                 }
             }
-            
+
         }
 
-      
+
         private void resetButton_Click(object sender, EventArgs e)
         {
-            //add animation to the first position
+            animationTimer.Enabled = true;
+            state = State.Animating;
+        }
+
+        private void AnimationTimer_Tick(object sender, EventArgs e)
+        {
+            switch (state)
+            {
+                case State.Animating:
+                    animation += 0.2f;
+                    if (animation <= 1f)
+                    {
+                        state = State.Animating;
+
+                        eye = Vector3.Lerp(eye, -3f * Vector3.UnitX, animation);
+                        target = Vector3.Lerp(target, Vector3.Zero, animation);
+                        up = Vector3.Lerp(up, Vector3.UnitZ, animation);
+                        myView.Invalidate();
+                    }
+                    else
+                    {
+                        state = State.Init;
+                        blend = 0f;
+                        animation = 0f;
+                        animationTimer.Enabled = false;
+
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+
+
+
+        private void ResetColor_Click(object sender, EventArgs e)
+        {
+            minColor = defaultminColor;
+            maxColor = defaultmaxColor;
+            colorminbutton.BackColor = defaultminColor;
+            colormaxbutton.BackColor = defaultmaxColor;
+            myView.Invalidate();
+        }
+
+        private void DefaultMinColor_Click(object sender, EventArgs e)
+        {
+            if (defaultMinClorDialog.ShowDialog() == DialogResult.OK)
+            {
+                defaultMinColor.BackColor = defaultMinClorDialog.Color;
+                defaultminColor = defaultMinClorDialog.Color;
+                myView.Invalidate();
+            }
+        }
+
+        private void DefaultMaxColor_Click(object sender, EventArgs e)
+        {
+            if (defaultMaxColorDialog.ShowDialog() == DialogResult.OK)
+            {
+                defaultMaxColor.BackColor = defaultMaxColorDialog.Color;
+                defaultmaxColor = defaultMaxColorDialog.Color;
+                myView.Invalidate();
+            }
+        }
+
+        private void Colorminbutton_Click(object sender, EventArgs e)
+        {
+            if (minColorDialog.ShowDialog() == DialogResult.OK)
+            {
+                colorminbutton.BackColor = minColorDialog.Color;
+                minColor = minColorDialog.Color;
+                myView.Invalidate();
+            }
+        }
+
+        private void Colormaxbutton_Click(object sender, EventArgs e)
+        {
+
+            if (maxColorDialog.ShowDialog() == DialogResult.OK)
+            {
+                colormaxbutton.BackColor = maxColorDialog.Color;
+                maxColor = maxColorDialog.Color;
+                myView.Invalidate();
+            }
         }
 
         private void MinTrack_ValueChanged(object sender, EventArgs e)
@@ -617,6 +667,7 @@ namespace DataTrajec
 
         private void Trajectories_Load(object sender, EventArgs e)
         {
+
             ReadMapFile("fr-administrative-area.csv");
             ReadTrajectoriesFile("trajectories.txt");
             GetMinMax();
@@ -626,16 +677,17 @@ namespace DataTrajec
 
         private void InitValues()
         {
+            minColor = defaultminColor;
+            maxColor = defaultmaxColor;
             blend = 0f;
             eye = -3f * Vector3.UnitX;
             target = Vector3.Zero;
             up = Vector3.UnitZ;
             previousPos = Vector2.Zero;
-            quaternion = Quaternion.Identity;
             alphaValue = 50;
             startAltitude = -1f;
             endAltitude = 1f;
-
+            animation = 0f;
         }
 
 
@@ -672,34 +724,22 @@ namespace DataTrajec
 
             string[] lines = File.ReadAllLines(jsonFile);
             char[] splitChar = new char[] { ';' };
-            int id = 1;
-            regions = new Dictionary<int, List<PointF>>();
+
+            regions = new List<BAMCIS.GeoJSON.Polygon>();
             foreach (string line in lines)
             {
                 if (line[0] != '#')
                 {
                     var items = line.Split(splitChar);
 
-
-
                     string geoShape = items[1];
                     geoShape = geoShape.TrimStart('"').TrimEnd('"');
                     geoShape = geoShape.Replace("\"\"", "\"");
 
-                    JObject shapeJson = JObject.Parse(geoShape);
-                    if (!regions.ContainsKey(id))
-                        regions.Add(id, new List<PointF>());
 
-                    foreach (var polygon in shapeJson["coordinates"])
-                    {
-                        foreach (var point in polygon)
-                        {
-                            regions[id].Add(new PointF(Single.Parse(point[0].ToString(), CultureInfo.InvariantCulture),
-                                Single.Parse(point[1].ToString(), CultureInfo.InvariantCulture)));
+                    BAMCIS.GeoJSON.Polygon polygon = JsonConvert.DeserializeObject<BAMCIS.GeoJSON.Polygon>(geoShape);
+                    regions.Add(polygon);
 
-                        }
-                    }
-                    id++;
                 }
             }
 
