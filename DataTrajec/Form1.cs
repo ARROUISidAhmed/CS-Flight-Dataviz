@@ -454,7 +454,7 @@ namespace DataTrajec
 
         private void MaxTrack_ValueChanged(object sender, EventArgs e)
         {
-            endAltitude = maxTrack.Value / (float)100;
+            endAltitude = maxTrack.Value /  (float)100;
             myView.Invalidate();
         }
 
