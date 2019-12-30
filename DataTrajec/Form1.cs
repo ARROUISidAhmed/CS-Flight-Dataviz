@@ -32,6 +32,7 @@ namespace DataTrajec
             Init,
             RotateX,
             RotateY,
+            LeftDrag,
             RightDrag,
             MiddleDrag,
             Animating
@@ -226,9 +227,26 @@ namespace DataTrajec
 
             switch (state)
             {
+                case State.RightDrag :
+                    float deltaTheta = Map(0, myView.Width, 0, MathHelper.TwoPi, previousPos.X - e.X);
+                    float deltaPhi = Map(0, myView.Height, 0, MathHelper.Pi, previousPos.Y - e.Y);
 
-                case State.RightDrag:
-                    state = State.RightDrag;
+
+
+                    Quaternion rotationX = Quaternion.FromAxisAngle(up, deltaTheta);
+                    Quaternion rotationY = Quaternion.FromAxisAngle(Vector3.Cross(up, eye - target), deltaPhi);
+
+
+                    eye = Vector3.Transform(eye, rotationX * rotationY);
+                    up = Vector3.Transform(up, rotationY);
+
+                    previousPos.X = e.X;
+                    previousPos.Y = e.Y;
+
+                    myView.Invalidate();
+                    break;
+                case State.LeftDrag:
+                    state = State.LeftDrag;
 
 
                     float x = Map(0, myView.Width, 0f, 1f, previousPos.X - e.X);
@@ -259,6 +277,9 @@ namespace DataTrajec
         {
             switch (e.Button)
             {
+                case MouseButtons.Left:
+                    HandleLeftDown(e);
+                    break;
                 case MouseButtons.Right:
                     HandleRightDown(e);
                     break;
@@ -271,13 +292,26 @@ namespace DataTrajec
 
         }
 
-
         private void HandleRightDown(MouseEventArgs e)
         {
             switch (state)
             {
                 case State.Init:
                     state = State.RightDrag;
+                    previousPos.X = e.X;
+                    previousPos.Y = e.Y;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void HandleLeftDown(MouseEventArgs e)
+        {
+            switch (state)
+            {
+                case State.Init:
+                    state = State.LeftDrag;
                     previousPos.X = e.X;
                     previousPos.Y = e.Y;
                     break;
@@ -306,6 +340,9 @@ namespace DataTrajec
             switch (e.Button)
             {
 
+                case MouseButtons.Left:
+                    HandleLeftUp();
+                    break;
                 case MouseButtons.Right:
                     HandleRightUp();
                     break;
@@ -317,12 +354,23 @@ namespace DataTrajec
             }
         }
 
-
         private void HandleRightUp()
         {
             switch (state)
             {
                 case State.RightDrag:
+                    state = State.Init;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void HandleLeftUp()
+        {
+            switch (state)
+            {
+                case State.LeftDrag:
                     state = State.Init;
                     break;
                 default:
