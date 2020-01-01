@@ -35,10 +35,20 @@ namespace DataTrajec
             LeftDrag,
             RightDrag,
             MiddleDrag,
-            Animating
-
+            Blocked
         }
+
+        private enum DrawingMode
+        {
+            Line,
+            Particle
+        }
+
+
         private State state;
+        private DrawingMode drawingMode;
+
+
         private Dictionary<int, List<Record>> dicRec;
         private List<BAMCIS.GeoJSON.Polygon> regions;
         /// <summary>
@@ -46,12 +56,17 @@ namespace DataTrajec
         /// </summary>
         private OpenTK.GLControl myView;
 
+
+
         private Record minRecord, maxRecord;
 
+
         private Vector3 eye, target, up;
+        private float fovy;
         private Vector2 previousPos;
 
-        private float animation;
+        private DateTime currentDateTime;
+        private float time;
         private float blend;
 
         private int alphaValue;
@@ -96,19 +111,15 @@ namespace DataTrajec
         {
 
             minRecord = new Record();
-            maxRecord = new Record();/*
-            minPoint = new Vector2d();
-            maxPoint = new Vector2d();*/
+            maxRecord = new Record();
             minRecord.x = float.MaxValue;
             minRecord.y = float.MaxValue;
             minRecord.z = float.MaxValue;
+            minRecord.time = DateTime.MaxValue;
             maxRecord.x = float.MinValue;
             maxRecord.y = float.MinValue;
-            maxRecord.z = float.MinValue;/*
-            minPoint.X = float.MaxValue;
-            minPoint.Y = float.MaxValue;
-            maxPoint.X = float.MinValue;
-            maxPoint.Y = float.MinValue;*/
+            maxRecord.z = float.MinValue;
+            maxRecord.time = DateTime.MinValue;
 
             foreach (var recs in dicRec)
             {
@@ -120,6 +131,8 @@ namespace DataTrajec
                         minRecord.y = rec.y;
                     if (rec.z < minRecord.z)
                         minRecord.z = rec.z;
+                    if (rec.time < minRecord.time)
+                        minRecord.time = rec.time;
 
                     if (rec.x > maxRecord.x)
                         maxRecord.x = rec.x;
@@ -127,29 +140,10 @@ namespace DataTrajec
                         maxRecord.y = rec.y;
                     if (rec.z > maxRecord.z)
                         maxRecord.z = rec.z;
+                    if (rec.time > maxRecord.time)
+                        maxRecord.time = rec.time;
                 }
             }
-            /*
-            foreach (var polygon in regions)
-            {
-
-                foreach (var rings in polygon.Coordinates.ToList())
-                {
-                    foreach (var point in rings.Coordinates.ToList())
-                    {
-
-                        if (point.Longitude < minPoint.X)
-                            minPoint.X = point.Longitude;
-                        if (point.Latitude < minPoint.Y)
-                            minPoint.Y = point.Latitude;
-
-                        if (point.Longitude > maxPoint.X)
-                            maxPoint.X = point.Longitude;
-                        if (point.Latitude > maxPoint.Y)
-                            maxPoint.Y = point.Latitude;
-                    }
-                }
-            }*/
 
 
 
@@ -181,9 +175,7 @@ namespace DataTrajec
 
             float aspect_ratio = myView.ClientSize.Width / (float)myView.ClientSize.Height;
             Matrix4 perpective = Matrix4.CreatePerspectiveFieldOfView
-            (MathHelper.PiOver4, aspect_ratio, 1f, 64f);
-            Matrix4 ortho = Matrix4.CreateOrthographic
-                ((float)myView.ClientSize.Width, (float)myView.ClientSize.Height, 1f, 64f);
+            (fovy, aspect_ratio, 0.1f, 64f);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadMatrix(ref perpective);
 
@@ -209,6 +201,11 @@ namespace DataTrajec
             return ((destMax - destMin) * (nb - srcMin) / (srcMax - srcMin)) + destMin;
         }
 
+        private double Mapd(double srcMin, double srcMax, double destMin, double destMax, double nb)
+        {
+            return ((destMax - destMin) * (nb - srcMin) / (srcMax - srcMin)) + destMin;
+        }
+
         private new void MouseWheel(object sender, MouseEventArgs e)
         {
 
@@ -227,7 +224,7 @@ namespace DataTrajec
 
             switch (state)
             {
-                case State.RightDrag :
+                case State.RightDrag:
                     float deltaTheta = Map(0, myView.Width, 0, MathHelper.TwoPi, previousPos.X - e.X);
                     float deltaPhi = Map(0, myView.Height, 0, MathHelper.Pi, previousPos.Y - e.Y);
 
@@ -420,20 +417,57 @@ namespace DataTrajec
 
                 if (isPaintable)
                 {
-
-                    GL.Begin((PrimitiveType.LineStrip));
-                    foreach (var rec in traj.Value)
+                    switch (drawingMode)
                     {
+                        case DrawingMode.Line:
+                            GL.Begin((PrimitiveType.LineStrip));
+                            foreach (var rec in traj.Value)
+                            {
 
-                        GL.Color4(GetAltidueColor(rec.z, minColor, maxColor, alphaValue));
-                        GL.Vertex3(new Vector3(
-                            rec.x,
-                            rec.y,
-                            rec.z
-                            ));
+                                GL.Color4(GetAltidueColor(rec.z, minColor, maxColor, alphaValue));
+                                GL.Vertex3(new Vector3(
+                                    rec.x,
+                                    rec.y,
+                                    rec.z
+                                    ));
 
+                            }
+
+                            GL.End();
+                            break;
+                        case DrawingMode.Particle:
+                            GL.Begin((PrimitiveType.Points));
+                            for (int i = 0; i < traj.Value.Count - 1; i++)
+                            {
+
+                                GL.Color4(GetAltidueColor(traj.Value[i].z, minColor, maxColor, alphaValue));
+
+                                Record rCurrent = traj.Value[i];
+                                Record rNext = traj.Value[(i + 1) % traj.Value.Count];
+                                float b = (float)((currentDateTime - minRecord.time).TotalSeconds /
+                                    (rNext.time - rCurrent.time).TotalSeconds) % 1f;
+
+                                Vector3 point = Vector3.Lerp(
+                                    new Vector3(
+                                    rCurrent.x,
+                                   rCurrent.y,
+                                    rCurrent.z
+                                    ),
+                                    new Vector3(
+                                        rNext.x,
+                                        rNext.y,
+                                        rNext.z),
+                                    b
+                                    );
+
+                                GL.Vertex3(point);
+
+                            }
+
+                            GL.End();
+                            break;
                     }
-                    GL.End();
+
                 }
 
 
@@ -453,8 +487,8 @@ namespace DataTrajec
 
                         GL.Color4(Color.Yellow);
                         GL.Vertex3(new Vector3(
-                        Map(minRecord.x, maxRecord.x, -1, 1, (float)point.Longitude),
-                        Map(minRecord.y, maxRecord.y, -1, 1, (float)point.Latitude),
+                        (float)Mapd(minRecord.x, maxRecord.x, -1, 1, point.Longitude),
+                        (float)Mapd(minRecord.y, maxRecord.y, -1, 1, point.Latitude),
                         -1f));
 
                     }
@@ -490,11 +524,7 @@ namespace DataTrajec
         }
 
 
-
-
-
-
-        private void button2_MouseDown(object sender, MouseEventArgs e)
+        private void rotateY_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
@@ -512,7 +542,7 @@ namespace DataTrajec
 
         }
 
-        private void button2_MouseMove(object sender, MouseEventArgs e)
+        private void rotateY_MouseMove(object sender, MouseEventArgs e)
         {
 
 
@@ -537,7 +567,7 @@ namespace DataTrajec
             }
         }
 
-        private void button2_MouseUp(object sender, MouseEventArgs e)
+        private void rotateY_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
@@ -620,31 +650,31 @@ namespace DataTrajec
 
         private void resetButton_Click(object sender, EventArgs e)
         {
-            animationTimer.Enabled = true;
-            state = State.Animating;
+            resetAnimationTimer.Enabled = true;
+            state = State.Blocked;
         }
 
-        private void AnimationTimer_Tick(object sender, EventArgs e)
+        private void ResetAnimationTimer_Tick(object sender, EventArgs e)
         {
             switch (state)
             {
-                case State.Animating:
-                    animation += 0.2f;
-                    if (animation <= 1f)
+                case State.Blocked:
+                    time += 0.2f;
+                    if (time <= 1f)
                     {
-                        state = State.Animating;
+                        state = State.Blocked;
 
-                        eye = Vector3.Lerp(eye, -3f * Vector3.UnitX, animation);
-                        target = Vector3.Lerp(target, Vector3.Zero, animation);
-                        up = Vector3.Lerp(up, Vector3.UnitZ, animation);
+                        eye = Vector3.Lerp(eye, -3f * Vector3.UnitX, time);
+                        target = Vector3.Lerp(target, Vector3.Zero, time);
+                        up = Vector3.Lerp(up, Vector3.UnitZ, time);
                         myView.Invalidate();
                     }
                     else
                     {
                         state = State.Init;
                         blend = 0f;
-                        animation = 0f;
-                        animationTimer.Enabled = false;
+                        time = 0f;
+                        resetAnimationTimer.Enabled = false;
 
                     }
                     break;
@@ -713,6 +743,53 @@ namespace DataTrajec
             myView.Invalidate();
         }
 
+        private void FovyTrack_ValueChanged(object sender, EventArgs e)
+        {
+            fovy = MathHelper.PiOver2 / (float)fovyTrack.Value;
+            myView.Invalidate();
+        }
+
+        private void ParticleButton_Click(object sender, EventArgs e)
+        {
+            drawingMode = DrawingMode.Particle;
+            currentDateTime = minRecord.time;
+            particleAnimationTimer.Enabled = true;
+        }
+
+        private void LineButton_Click(object sender, EventArgs e)
+        {
+            drawingMode = DrawingMode.Line;
+            particleAnimationTimer.Enabled = false;
+            myView.Invalidate();
+        }
+
+        private void ParticleAnimationTimer_Tick(object sender, EventArgs e)
+        {
+            switch (state)
+            {
+                default:
+                    switch (drawingMode)
+                    {
+                        case DrawingMode.Particle:
+
+                            if (currentDateTime < maxRecord.time)
+                            {
+                                currentDateTime = currentDateTime.AddSeconds((maxRecord.time - minRecord.time).TotalSeconds / (50f * 10f));
+                                myView.Invalidate();
+                            }
+                            else
+                            {
+                                currentDateTime = minRecord.time;
+                            }
+
+                            break;
+                    }
+                    break;
+
+            }
+
+        }
+
         private void Trajectories_Load(object sender, EventArgs e)
         {
 
@@ -725,9 +802,11 @@ namespace DataTrajec
 
         private void InitValues()
         {
+
             minColor = defaultminColor;
             maxColor = defaultmaxColor;
             blend = 0f;
+            fovy = MathHelper.PiOver4;
             eye = -3f * Vector3.UnitX;
             target = Vector3.Zero;
             up = Vector3.UnitZ;
@@ -735,7 +814,9 @@ namespace DataTrajec
             alphaValue = 50;
             startAltitude = -1f;
             endAltitude = 1f;
-            animation = 0f;
+            time = 0f;
+            drawingMode = DrawingMode.Line;
+            currentDateTime = minRecord.time;
         }
 
 
