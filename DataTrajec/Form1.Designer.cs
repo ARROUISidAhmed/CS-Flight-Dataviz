@@ -31,6 +31,12 @@
             this.components = new System.ComponentModel.Container();
             this.alphaTrack = new System.Windows.Forms.TrackBar();
             this.alphaGroup = new System.Windows.Forms.GroupBox();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.orthographicButton = new System.Windows.Forms.RadioButton();
+            this.perspectiveButton = new System.Windows.Forms.RadioButton();
+            this.renderingGroup = new System.Windows.Forms.GroupBox();
+            this.particleButton = new System.Windows.Forms.RadioButton();
+            this.lineButton = new System.Windows.Forms.RadioButton();
             this.label5 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.fovyTrack = new System.Windows.Forms.TrackBar();
@@ -56,11 +62,11 @@
             this.maxColorDialog = new System.Windows.Forms.ColorDialog();
             this.defaultMaxColorDialog = new System.Windows.Forms.ColorDialog();
             this.defaultMinClorDialog = new System.Windows.Forms.ColorDialog();
-            this.particleButton = new System.Windows.Forms.RadioButton();
-            this.lineButton = new System.Windows.Forms.RadioButton();
             this.particleAnimationTimer = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.alphaTrack)).BeginInit();
             this.alphaGroup.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.renderingGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.fovyTrack)).BeginInit();
             this.altitude.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.maxTrack)).BeginInit();
@@ -85,8 +91,8 @@
             // alphaGroup
             // 
             this.alphaGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.alphaGroup.Controls.Add(this.lineButton);
-            this.alphaGroup.Controls.Add(this.particleButton);
+            this.alphaGroup.Controls.Add(this.groupBox1);
+            this.alphaGroup.Controls.Add(this.renderingGroup);
             this.alphaGroup.Controls.Add(this.label5);
             this.alphaGroup.Controls.Add(this.label4);
             this.alphaGroup.Controls.Add(this.fovyTrack);
@@ -95,10 +101,81 @@
             this.alphaGroup.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.alphaGroup.Name = "alphaGroup";
             this.alphaGroup.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.alphaGroup.Size = new System.Drawing.Size(265, 188);
+            this.alphaGroup.Size = new System.Drawing.Size(265, 246);
             this.alphaGroup.TabIndex = 1;
             this.alphaGroup.TabStop = false;
             this.alphaGroup.Text = "Visual";
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.orthographicButton);
+            this.groupBox1.Controls.Add(this.perspectiveButton);
+            this.groupBox1.Location = new System.Drawing.Point(6, 125);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(253, 52);
+            this.groupBox1.TabIndex = 8;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Projection";
+            // 
+            // orthographicButton
+            // 
+            this.orthographicButton.AutoSize = true;
+            this.orthographicButton.Location = new System.Drawing.Point(136, 22);
+            this.orthographicButton.Name = "orthographicButton";
+            this.orthographicButton.Size = new System.Drawing.Size(112, 21);
+            this.orthographicButton.TabIndex = 1;
+            this.orthographicButton.TabStop = true;
+            this.orthographicButton.Text = "Orthographic";
+            this.orthographicButton.UseVisualStyleBackColor = true;
+            this.orthographicButton.Click += new System.EventHandler(this.OrthographicButton_Click);
+            // 
+            // perspectiveButton
+            // 
+            this.perspectiveButton.AutoSize = true;
+            this.perspectiveButton.Checked = true;
+            this.perspectiveButton.Location = new System.Drawing.Point(7, 22);
+            this.perspectiveButton.Name = "perspectiveButton";
+            this.perspectiveButton.Size = new System.Drawing.Size(103, 21);
+            this.perspectiveButton.TabIndex = 0;
+            this.perspectiveButton.TabStop = true;
+            this.perspectiveButton.Text = "Perspective";
+            this.perspectiveButton.UseVisualStyleBackColor = true;
+            this.perspectiveButton.Click += new System.EventHandler(this.PerspectiveButton_Click);
+            // 
+            // renderingGroup
+            // 
+            this.renderingGroup.Controls.Add(this.particleButton);
+            this.renderingGroup.Controls.Add(this.lineButton);
+            this.renderingGroup.Location = new System.Drawing.Point(6, 183);
+            this.renderingGroup.Name = "renderingGroup";
+            this.renderingGroup.Size = new System.Drawing.Size(253, 62);
+            this.renderingGroup.TabIndex = 7;
+            this.renderingGroup.TabStop = false;
+            this.renderingGroup.Text = "Rendering";
+            // 
+            // particleButton
+            // 
+            this.particleButton.AutoSize = true;
+            this.particleButton.Location = new System.Drawing.Point(136, 21);
+            this.particleButton.Name = "particleButton";
+            this.particleButton.Size = new System.Drawing.Size(83, 21);
+            this.particleButton.TabIndex = 5;
+            this.particleButton.Text = "Particles";
+            this.particleButton.UseVisualStyleBackColor = true;
+            this.particleButton.Click += new System.EventHandler(this.ParticleButton_Click);
+            // 
+            // lineButton
+            // 
+            this.lineButton.AutoSize = true;
+            this.lineButton.Checked = true;
+            this.lineButton.Location = new System.Drawing.Point(7, 21);
+            this.lineButton.Name = "lineButton";
+            this.lineButton.Size = new System.Drawing.Size(63, 21);
+            this.lineButton.TabIndex = 6;
+            this.lineButton.TabStop = true;
+            this.lineButton.Text = "Lines";
+            this.lineButton.UseVisualStyleBackColor = true;
+            this.lineButton.Click += new System.EventHandler(this.LineButton_Click);
             // 
             // label5
             // 
@@ -121,12 +198,13 @@
             // fovyTrack
             // 
             this.fovyTrack.Location = new System.Drawing.Point(89, 69);
-            this.fovyTrack.Minimum = 1;
+            this.fovyTrack.Maximum = 150;
+            this.fovyTrack.Minimum = 45;
             this.fovyTrack.Name = "fovyTrack";
             this.fovyTrack.Size = new System.Drawing.Size(151, 56);
             this.fovyTrack.TabIndex = 1;
             this.fovyTrack.TickStyle = System.Windows.Forms.TickStyle.Both;
-            this.fovyTrack.Value = 1;
+            this.fovyTrack.Value = 45;
             this.fovyTrack.ValueChanged += new System.EventHandler(this.FovyTrack_ValueChanged);
             // 
             // altitude
@@ -138,7 +216,7 @@
             this.altitude.Controls.Add(this.label1);
             this.altitude.Controls.Add(this.maxTrack);
             this.altitude.Controls.Add(this.minTrack);
-            this.altitude.Location = new System.Drawing.Point(3, 194);
+            this.altitude.Location = new System.Drawing.Point(3, 252);
             this.altitude.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.altitude.Name = "altitude";
             this.altitude.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
@@ -235,7 +313,7 @@
             this.resetBox.Controls.Add(this.label3);
             this.resetBox.Controls.Add(this.resetText);
             this.resetBox.Controls.Add(this.resetButton);
-            this.resetBox.Location = new System.Drawing.Point(3, 405);
+            this.resetBox.Location = new System.Drawing.Point(3, 463);
             this.resetBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.resetBox.Name = "resetBox";
             this.resetBox.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
@@ -306,7 +384,7 @@
             this.resetButton.TabIndex = 4;
             this.resetButton.Text = "Reset";
             this.resetButton.UseVisualStyleBackColor = true;
-            this.resetButton.Click += new System.EventHandler(this.resetButton_Click);
+            this.resetButton.Click += new System.EventHandler(this.ResetButton_Click);
             // 
             // rotateY
             // 
@@ -322,9 +400,9 @@
             this.rotateY.TabIndex = 5;
             this.rotateY.Text = "Rotate->Y";
             this.rotateY.UseVisualStyleBackColor = false;
-            this.rotateY.MouseDown += new System.Windows.Forms.MouseEventHandler(this.rotateY_MouseDown);
-            this.rotateY.MouseMove += new System.Windows.Forms.MouseEventHandler(this.rotateY_MouseMove);
-            this.rotateY.MouseUp += new System.Windows.Forms.MouseEventHandler(this.rotateY_MouseUp);
+            this.rotateY.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RotateY_MouseDown);
+            this.rotateY.MouseMove += new System.Windows.Forms.MouseEventHandler(this.RotateY_MouseMove);
+            this.rotateY.MouseUp += new System.Windows.Forms.MouseEventHandler(this.RotateY_MouseUp);
             // 
             // rotateX
             // 
@@ -339,38 +417,14 @@
             this.rotateX.TabIndex = 6;
             this.rotateX.Text = "Rotate->X";
             this.rotateX.UseVisualStyleBackColor = false;
-            this.rotateX.MouseDown += new System.Windows.Forms.MouseEventHandler(this.rotateX_MouseDown);
-            this.rotateX.MouseMove += new System.Windows.Forms.MouseEventHandler(this.rotateX_MouseMove);
-            this.rotateX.MouseUp += new System.Windows.Forms.MouseEventHandler(this.rotateX_MouseUp);
+            this.rotateX.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RotateX_MouseDown);
+            this.rotateX.MouseMove += new System.Windows.Forms.MouseEventHandler(this.RotateX_MouseMove);
+            this.rotateX.MouseUp += new System.Windows.Forms.MouseEventHandler(this.RotateX_MouseUp);
             // 
             // resetAnimationTimer
             // 
             this.resetAnimationTimer.Interval = 20;
             this.resetAnimationTimer.Tick += new System.EventHandler(this.ResetAnimationTimer_Tick);
-            // 
-            // particleButton
-            // 
-            this.particleButton.AutoSize = true;
-            this.particleButton.Location = new System.Drawing.Point(138, 131);
-            this.particleButton.Name = "particleButton";
-            this.particleButton.Size = new System.Drawing.Size(83, 21);
-            this.particleButton.TabIndex = 5;
-            this.particleButton.Text = "Particles";
-            this.particleButton.UseVisualStyleBackColor = true;
-            this.particleButton.Click += new System.EventHandler(this.ParticleButton_Click);
-            // 
-            // lineButton
-            // 
-            this.lineButton.AutoSize = true;
-            this.lineButton.Checked = true;
-            this.lineButton.Location = new System.Drawing.Point(9, 131);
-            this.lineButton.Name = "lineButton";
-            this.lineButton.Size = new System.Drawing.Size(63, 21);
-            this.lineButton.TabIndex = 6;
-            this.lineButton.TabStop = true;
-            this.lineButton.Text = "Lines";
-            this.lineButton.UseVisualStyleBackColor = true;
-            this.lineButton.Click += new System.EventHandler(this.LineButton_Click);
             // 
             // particleAnimationTimer
             // 
@@ -393,6 +447,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.alphaTrack)).EndInit();
             this.alphaGroup.ResumeLayout(false);
             this.alphaGroup.PerformLayout();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.renderingGroup.ResumeLayout(false);
+            this.renderingGroup.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.fovyTrack)).EndInit();
             this.altitude.ResumeLayout(false);
             this.altitude.PerformLayout();
@@ -437,6 +495,10 @@
         private System.Windows.Forms.RadioButton lineButton;
         private System.Windows.Forms.RadioButton particleButton;
         private System.Windows.Forms.Timer particleAnimationTimer;
+        private System.Windows.Forms.GroupBox renderingGroup;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.RadioButton orthographicButton;
+        private System.Windows.Forms.RadioButton perspectiveButton;
     }
 }
 
