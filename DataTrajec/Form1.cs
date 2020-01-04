@@ -70,6 +70,7 @@ namespace DataTrajec
 
 
         private Vector3 eye, target, up;
+        private float left, right, top, bottom;
         private float fovy;
         private Vector2 previousPos;
 
@@ -79,7 +80,7 @@ namespace DataTrajec
         private RectangleF selectionRectangle;
 
         private int alphaValue;
-        private float startAltitude, endAltitude;
+        private double startAltitude, endAltitude;
 
         private Color minColor;
         private Color maxColor;
@@ -113,6 +114,9 @@ namespace DataTrajec
             myView.MouseUp += new MouseEventHandler(this.MouseUp);
             myView.MouseWheel += new MouseEventHandler(this.MouseWheel);
             this.Controls.Add(myView);
+
+            rangeSlider1.LowerValueChanged += this.RangeSlider_LowerChanged;
+            rangeSlider1.UpperValueChanged += this.RangeSlider_UpperChanged;
         }
 
 
@@ -231,9 +235,11 @@ namespace DataTrajec
 
         private void SetOrthoProjection()
         {
+
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity(); // reset matrix
-            GL.Ortho(-1.5f, 1f, -1.5f, 1f, 0.1f, 64f);
+
+            GL.Ortho(left, right, bottom, top, 0.1f, 64f);
         }
 
         private void SetLookAtCamera()
@@ -403,21 +409,107 @@ namespace DataTrajec
         {
             switch (state)
             {
-                default:
+                case State.Init:
                     HandleMouseWheel(e);
                     break;
             }
         }
 
+        private float Lerp(float firstFloat, float secondFloat, float by)
+        {
+            return firstFloat * (1 - by) + secondFloat * by;
+        }
+
+        public static Vector3 ConvertScreenToWorlds(int x, int y)
+        {
+            int[] viewport = new int[4];
+            Matrix4 modelViewMatrix, projectionMatrix;
+            GL.GetFloat(GetPName.ModelviewMatrix, out modelViewMatrix);
+            GL.GetFloat(GetPName.ProjectionMatrix, out projectionMatrix);
+            GL.GetInteger(GetPName.Viewport, viewport);
+            Vector2 mouse;
+            mouse.X = x;
+            mouse.Y = y;
+            Vector4 vector = UnProject(ref projectionMatrix, ref modelViewMatrix, new Size(viewport[2], viewport[3]), mouse);
+            Vector3 coords = new Vector3(vector.X, vector.Y, vector.Z);
+            return coords;
+        }
+        public static Vector4 UnProject(ref Matrix4 projection, ref Matrix4 view, Size viewport, Vector2 screen)
+        {
+            Vector4 vec;
+
+            vec.X = 2.0f * screen.X / (float)viewport.Width - 1;
+            vec.Y = 2.0f * screen.Y / (float)viewport.Height - 1;
+            vec.Z = 0;
+            vec.W = 1.0f;
+
+            Matrix4 viewInv = Matrix4.Invert(view);
+            Matrix4 projInv = Matrix4.Invert(projection);
+
+            Vector4.Transform(ref vec, ref projInv, out vec);
+            Vector4.Transform(ref vec, ref viewInv, out vec);
+
+            if (vec.W > float.Epsilon || vec.W < float.Epsilon)
+            {
+                vec.X /= vec.W;
+                vec.Y /= vec.W;
+                vec.Z /= vec.W;
+            }
+
+            return vec;
+        }
+        private static Vector2 ConvertWorldToScreen(float x, float y, float z)
+        {
+            int[] viewport = new int[4];
+            Matrix4 modelViewMatrix, projectionMatrix;
+            GL.GetFloat(GetPName.ModelviewMatrix, out modelViewMatrix);
+            GL.GetFloat(GetPName.ProjectionMatrix, out projectionMatrix);
+            GL.GetInteger(GetPName.Viewport, viewport);
+
+            Vector4 world = new Vector4(x, y, z, 1f);
+
+
+            world = Project(ref modelViewMatrix, ref projectionMatrix, world);
+            Vector2 point = new Vector2(((world.X + 1f) / 2f) * viewport[2], (1f - (world.Y + 1f) / 2f) * viewport[3]);
+            return point;
+        }
+        private static Vector4 Project(ref Matrix4 modelViewMatrix, ref Matrix4 projectionMatrix, Vector4 world)
+        {
+
+            Vector4.Transform(ref world, ref modelViewMatrix, out world);
+            Vector4.Transform(ref world, ref projectionMatrix, out world);
+
+            return world;
+
+        }
         private void HandleMouseWheel(MouseEventArgs e)
         {
+
             blend = MathHelper.Clamp((0.001f * e.Delta), -1f, 1f);
 
+            //Translate
+            /*
+            Vector3 dv = ConvertScreenToWorlds((int)((e.X - previousPos.X) * (1f - blend)),
+                                            (int)((e.Y - previousPos.Y) * (1f - blend)));
 
+
+            Matrix4 translation = Matrix4.CreateTranslation(-dv.Y * up - dv.X * Vector3.Cross(up, target - eye));
+
+            target = Vector3.TransformPosition(target, translation);
+            eye = Vector3.TransformPosition(eye, translation);
+            */
+            //Scale
             Matrix3 scale = Matrix3.CreateScale(1f - blend);
+
             eye = Vector3.Transform((eye - target), scale) + target;
+            left *= 1f - blend;
+            right *= 1f - blend;
+            bottom *= 1f - blend;
+            top *= 1f - blend;
+
 
             myView.Invalidate();
+
         }
 
         private new void MouseMove(object sender, MouseEventArgs e)
@@ -440,21 +532,16 @@ namespace DataTrajec
             }
         }
 
-
         private void ComputeSelectedTrajectories(MouseEventArgs e)
         {
-            Matrix4 modelViewMatrix, projectionMatrix;
-            GL.GetFloat(GetPName.ModelviewMatrix, out modelViewMatrix);
-            GL.GetFloat(GetPName.ProjectionMatrix, out projectionMatrix);
 
-
-            Vector4 coords = new Vector4();
             selectionRectangle = new RectangleF(Math.Min(previousPos.X, e.X),
-              Math.Min(previousPos.Y, e.Y),
-              Math.Abs(previousPos.X - e.X),
-              Math.Abs(previousPos.Y - e.Y));
-            PointF pointF = new PointF();
+                Math.Min(previousPos.Y, e.Y),
+                Math.Abs(previousPos.X - e.X),
+                Math.Abs(previousPos.Y - e.Y));
 
+            PointF pointF;
+            Vector2 screenCoords;
 
             selectedTrajectories.Clear();
             foreach (var i in drawableTrajectories)
@@ -467,18 +554,8 @@ namespace DataTrajec
                      * 
                      *
                      */
-                    coords.X = point.x;
-                    coords.Y = point.y;
-                    coords.Z = point.z;
-                    coords.W = 1f;
-
-                    Vector4.Transform(ref coords, ref modelViewMatrix, out coords);
-                    Vector4.Transform(ref coords, ref projectionMatrix, out coords);
-
-
-
-                    pointF.X = ((coords.X + 1f) / 2f) * myView.ClientSize.Width;
-                    pointF.Y = (1f - (coords.Y + 1f) / 2f) * myView.ClientSize.Height;
+                    screenCoords = ConvertWorldToScreen(point.x, point.y, point.z);
+                    pointF = new PointF(screenCoords.X, screenCoords.Y);
                     if (selectionRectangle.Contains(pointF))
                     {
                         selectedTrajectories.Add(i);
@@ -489,6 +566,8 @@ namespace DataTrajec
             }
 
         }
+
+
 
         private void HandleLeftDrag(MouseEventArgs e)
         {
@@ -672,19 +751,19 @@ namespace DataTrajec
             fovy = fovyTrack.Value;
             myView.Invalidate();
         }
-        private void MinTrack_ValueChanged(object sender, EventArgs e)
-        {
-            startAltitude = minTrack.Value / (float)100;
-            ComputeVisibleTrajectories();
-            myView.Invalidate();
-        }
-        private void MaxTrack_ValueChanged(object sender, EventArgs e)
-        {
-            endAltitude = maxTrack.Value / (float)100;
-            ComputeVisibleTrajectories();
-            myView.Invalidate();
-        }
 
+        private void RangeSlider_LowerChanged(double value)
+        {
+            startAltitude = value * 2 - 1;
+            ComputeVisibleTrajectories();
+            myView.Invalidate();
+        }
+        private void RangeSlider_UpperChanged(double value)
+        {
+            endAltitude = value * 2 - 1;
+            ComputeVisibleTrajectories();
+            myView.Invalidate();
+        }
 
         private void ComputeVisibleTrajectories()
         {
@@ -858,6 +937,7 @@ namespace DataTrajec
         {
             resetAnimationTimer.Enabled = true;
             state = State.Blocked;
+            myView.Invalidate();
         }
 
         private void ResetAnimationTimer_Tick(object sender, EventArgs e)
@@ -873,15 +953,18 @@ namespace DataTrajec
                         eye = Vector3.Lerp(eye, -3f * Vector3.UnitX, time);
                         target = Vector3.Lerp(target, Vector3.Zero, time);
                         up = Vector3.Lerp(up, Vector3.UnitZ, time);
+                        left = Lerp(left, -2f, time);
+                        right = Lerp(right, 2f, time);
+                        top = Lerp(top, 2f, time);
+                        bottom = Lerp(bottom, -2f, time);
                         myView.Invalidate();
                     }
                     else
                     {
                         state = State.Init;
-                        blend = 0f;
                         time = 0f;
                         resetAnimationTimer.Enabled = false;
-
+                        myView.Invalidate();
                     }
                     break;
                 default:
@@ -1013,10 +1096,18 @@ namespace DataTrajec
             eye = -3f * Vector3.UnitX;
             target = Vector3.Zero;
             up = Vector3.UnitZ;
+
+            //For orthographic projection
             previousPos = Vector2.Zero;
+            left = -2f;
+            right = 2f;
+            top = 2f;
+            bottom = -2f;
+
+
             alphaValue = 50;
-            startAltitude = -1f;
-            endAltitude = 1f;
+            startAltitude = -1.0;
+            endAltitude = 1.0;
             time = 0f;
             state = State.Init;
             drawingMode = DrawingMode.Line;

@@ -45,8 +45,6 @@
             this.colorminbutton = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
-            this.maxTrack = new System.Windows.Forms.TrackBar();
-            this.minTrack = new System.Windows.Forms.TrackBar();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.resetBox = new System.Windows.Forms.GroupBox();
             this.defaultMaxColor = new System.Windows.Forms.Button();
@@ -63,14 +61,14 @@
             this.defaultMaxColorDialog = new System.Windows.Forms.ColorDialog();
             this.defaultMinClorDialog = new System.Windows.Forms.ColorDialog();
             this.particleAnimationTimer = new System.Windows.Forms.Timer(this.components);
+            this.rangeSlider = new System.Windows.Forms.Integration.ElementHost();
+            this.rangeSlider1 = new UserControlFun.RangeSlider();
             ((System.ComponentModel.ISupportInitialize)(this.alphaTrack)).BeginInit();
             this.alphaGroup.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.renderingGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.fovyTrack)).BeginInit();
             this.altitude.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.maxTrack)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.minTrack)).BeginInit();
             this.flowLayoutPanel1.SuspendLayout();
             this.resetBox.SuspendLayout();
             this.SuspendLayout();
@@ -210,12 +208,11 @@
             // altitude
             // 
             this.altitude.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.altitude.Controls.Add(this.rangeSlider);
             this.altitude.Controls.Add(this.colormaxbutton);
             this.altitude.Controls.Add(this.colorminbutton);
             this.altitude.Controls.Add(this.label2);
             this.altitude.Controls.Add(this.label1);
-            this.altitude.Controls.Add(this.maxTrack);
-            this.altitude.Controls.Add(this.minTrack);
             this.altitude.Location = new System.Drawing.Point(3, 252);
             this.altitude.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.altitude.Name = "altitude";
@@ -228,7 +225,7 @@
             // colormaxbutton
             // 
             this.colormaxbutton.BackColor = System.Drawing.Color.Blue;
-            this.colormaxbutton.Location = new System.Drawing.Point(49, 145);
+            this.colormaxbutton.Location = new System.Drawing.Point(216, 99);
             this.colormaxbutton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.colormaxbutton.Name = "colormaxbutton";
             this.colormaxbutton.Size = new System.Drawing.Size(24, 23);
@@ -239,7 +236,7 @@
             // colorminbutton
             // 
             this.colorminbutton.BackColor = System.Drawing.Color.Green;
-            this.colorminbutton.Location = new System.Drawing.Point(48, 37);
+            this.colorminbutton.Location = new System.Drawing.Point(20, 98);
             this.colorminbutton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.colorminbutton.Name = "colorminbutton";
             this.colorminbutton.Size = new System.Drawing.Size(24, 23);
@@ -250,7 +247,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(3, 37);
+            this.label2.Location = new System.Drawing.Point(17, 64);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(30, 17);
             this.label2.TabIndex = 3;
@@ -259,39 +256,11 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(3, 145);
+            this.label1.Location = new System.Drawing.Point(207, 64);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(33, 17);
             this.label1.TabIndex = 2;
             this.label1.Text = "Max";
-            // 
-            // maxTrack
-            // 
-            this.maxTrack.Location = new System.Drawing.Point(79, 145);
-            this.maxTrack.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.maxTrack.Maximum = 100;
-            this.maxTrack.Minimum = -100;
-            this.maxTrack.Name = "maxTrack";
-            this.maxTrack.Size = new System.Drawing.Size(180, 56);
-            this.maxTrack.TabIndex = 1;
-            this.maxTrack.TickFrequency = 0;
-            this.maxTrack.TickStyle = System.Windows.Forms.TickStyle.Both;
-            this.maxTrack.Value = 100;
-            this.maxTrack.ValueChanged += new System.EventHandler(this.MaxTrack_ValueChanged);
-            // 
-            // minTrack
-            // 
-            this.minTrack.Location = new System.Drawing.Point(79, 37);
-            this.minTrack.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.minTrack.Maximum = 100;
-            this.minTrack.Minimum = -100;
-            this.minTrack.Name = "minTrack";
-            this.minTrack.Size = new System.Drawing.Size(180, 56);
-            this.minTrack.TabIndex = 0;
-            this.minTrack.TickFrequency = 0;
-            this.minTrack.TickStyle = System.Windows.Forms.TickStyle.Both;
-            this.minTrack.Value = -100;
-            this.minTrack.ValueChanged += new System.EventHandler(this.MinTrack_ValueChanged);
             // 
             // flowLayoutPanel1
             // 
@@ -398,7 +367,7 @@
             this.rotateY.Name = "rotateY";
             this.rotateY.Size = new System.Drawing.Size(109, 25);
             this.rotateY.TabIndex = 5;
-            this.rotateY.Text = "Rotate->Y";
+            this.rotateY.Text = "Rotate↕";
             this.rotateY.UseVisualStyleBackColor = false;
             this.rotateY.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RotateY_MouseDown);
             this.rotateY.MouseMove += new System.Windows.Forms.MouseEventHandler(this.RotateY_MouseMove);
@@ -415,7 +384,7 @@
             this.rotateX.Name = "rotateX";
             this.rotateX.Size = new System.Drawing.Size(109, 25);
             this.rotateX.TabIndex = 6;
-            this.rotateX.Text = "Rotate->X";
+            this.rotateX.Text = "Rotate↔";
             this.rotateX.UseVisualStyleBackColor = false;
             this.rotateX.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RotateX_MouseDown);
             this.rotateX.MouseMove += new System.Windows.Forms.MouseEventHandler(this.RotateX_MouseMove);
@@ -430,6 +399,15 @@
             // 
             this.particleAnimationTimer.Interval = 20;
             this.particleAnimationTimer.Tick += new System.EventHandler(this.ParticleAnimationTimer_Tick);
+            // 
+            // rangeSlider
+            // 
+            this.rangeSlider.Location = new System.Drawing.Point(50, 98);
+            this.rangeSlider.Name = "rangeSlider";
+            this.rangeSlider.Size = new System.Drawing.Size(161, 39);
+            this.rangeSlider.TabIndex = 7;
+            this.rangeSlider.Text = "rangeSlider";
+            this.rangeSlider.Child = this.rangeSlider1;
             // 
             // Trajectories
             // 
@@ -454,8 +432,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.fovyTrack)).EndInit();
             this.altitude.ResumeLayout(false);
             this.altitude.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.maxTrack)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.minTrack)).EndInit();
             this.flowLayoutPanel1.ResumeLayout(false);
             this.resetBox.ResumeLayout(false);
             this.resetBox.PerformLayout();
@@ -470,8 +446,6 @@
         private System.Windows.Forms.GroupBox altitude;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TrackBar maxTrack;
-        private System.Windows.Forms.TrackBar minTrack;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.Button rotateY;
         private System.Windows.Forms.Button rotateX;
@@ -499,6 +473,8 @@
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.RadioButton orthographicButton;
         private System.Windows.Forms.RadioButton perspectiveButton;
+        private System.Windows.Forms.Integration.ElementHost rangeSlider;
+        private UserControlFun.RangeSlider rangeSlider1;
     }
 }
 
